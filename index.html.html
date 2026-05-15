@@ -1,0 +1,1381 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Симуляция эмоционального интеллекта</title>
+  <style>
+    :root {
+      --bg: #f6f0e6;
+      --paper: #fffaf0;
+      --paper-2: #fbf3e5;
+      --text: #23201d;
+      --muted: #6e665d;
+      --line: #ded2c0;
+      --accent: #2f5bff;
+      --accent-2: #ff6b35;
+      --accent-3: #c8ff3d;
+      --good: #2b7a57;
+      --shadow: 0 18px 50px rgba(38, 32, 24, 0.10);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --max: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background:
+        linear-gradient(120deg, rgba(47, 91, 255, 0.045), transparent 32%),
+        radial-gradient(circle at top right, rgba(255, 107, 53, 0.09), transparent 28%),
+        var(--bg);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.33;
+      background-image:
+        linear-gradient(30deg, rgba(70, 60, 45, 0.12) 1px, transparent 1px),
+        linear-gradient(150deg, rgba(70, 60, 45, 0.10) 1px, transparent 1px);
+      background-size: 34px 58px;
+      mask-image: linear-gradient(to bottom, black, transparent 85%);
+    }
+
+    button, input, textarea { font: inherit; }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .app-shell {
+      width: min(100%, var(--max));
+      margin: 0 auto;
+      padding: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      letter-spacing: 0.01em;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--text);
+      border-radius: 50%;
+      position: relative;
+      background: var(--accent-3);
+      box-shadow: 4px 4px 0 var(--text);
+    }
+
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      right: -5px;
+      top: 5px;
+      border-radius: 50%;
+      background: var(--accent-2);
+      border: 2px solid var(--text);
+    }
+
+    .progress-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 250, 240, 0.70);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .card {
+      background: rgba(255, 250, 240, 0.88);
+      border: 1px solid rgba(222, 210, 192, 0.92);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius-xl);
+      padding: clamp(22px, 4vw, 46px);
+      backdrop-filter: blur(9px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      right: 18px;
+      top: 18px;
+      width: 70px;
+      height: 22px;
+      border-radius: 999px;
+      transform: rotate(4deg);
+      background: rgba(47, 91, 255, 0.10);
+      border: 1px solid rgba(47, 91, 255, 0.14);
+    }
+
+    .screen { animation: rise 260ms ease-out; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .kicker {
+      color: var(--accent);
+      font-weight: 760;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 12px;
+      margin: 0 0 14px;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      line-height: 1.04;
+      letter-spacing: -0.045em;
+    }
+
+    h1 {
+      font-size: clamp(42px, 12vw, 86px);
+      max-width: 900px;
+    }
+
+    h2 { font-size: clamp(30px, 7vw, 58px); }
+    h3 { font-size: clamp(22px, 4vw, 32px); }
+
+    p {
+      line-height: 1.62;
+      font-size: 17px;
+      margin: 14px 0 0;
+    }
+
+    .lead {
+      font-size: clamp(18px, 3.5vw, 24px);
+      max-width: 780px;
+      color: #37322c;
+    }
+
+    .muted { color: var(--muted); }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .btn {
+      min-height: 48px;
+      border-radius: 999px;
+      padding: 13px 20px;
+      font-weight: 760;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(1px); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 10px 24px rgba(47, 91, 255, 0.25);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 250, 240, 0.72);
+      border: 1px solid var(--line);
+      color: var(--text);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      padding-inline: 6px;
+    }
+
+    .notice {
+      margin-top: 22px;
+      padding: 16px 18px;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 107, 53, 0.08);
+      border: 1px solid rgba(255, 107, 53, 0.20);
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .option {
+      width: 100%;
+      text-align: left;
+      background: rgba(255, 250, 240, 0.96);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      color: var(--text);
+      min-height: 72px;
+      box-shadow: 0 8px 22px rgba(38, 32, 24, 0.055);
+      position: relative;
+    }
+
+    .option:hover, .option.selected {
+      border-color: rgba(47, 91, 255, 0.65);
+      box-shadow: 0 12px 28px rgba(47, 91, 255, 0.10);
+      background: white;
+    }
+
+    .option .label {
+      font-size: 16px;
+      line-height: 1.45;
+      display: block;
+    }
+
+    .option.selected::after {
+      content: "выбрано";
+      position: absolute;
+      right: 14px;
+      top: 12px;
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 760;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .scene-box {
+      margin-top: 24px;
+      border-radius: var(--radius-xl);
+      padding: clamp(20px, 4vw, 34px);
+      background:
+        linear-gradient(135deg, rgba(47, 91, 255, 0.10), transparent 48%),
+        var(--paper);
+      border: 1px solid var(--line);
+    }
+
+    .quote {
+      margin: 18px 0 0;
+      padding-left: 18px;
+      border-left: 4px solid var(--accent-2);
+      font-size: clamp(20px, 5vw, 34px);
+      line-height: 1.16;
+      letter-spacing: -0.02em;
+      font-weight: 820;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(35, 32, 29, 0.06);
+      border: 1px solid rgba(35, 32, 29, 0.09);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 13px;
+    }
+
+    .load-dots {
+      display: inline-flex;
+      gap: 4px;
+      margin-left: 2px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--line);
+    }
+
+    .dot.on { background: var(--accent-2); }
+
+    .mini-note {
+      margin-top: 18px;
+      font-size: 14px;
+      color: var(--muted);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .mini-note span:first-child {
+      color: var(--accent-2);
+      font-weight: 900;
+    }
+
+    .feedback-card {
+      margin-top: 22px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .feedback-item {
+      background: rgba(255, 255, 255, 0.52);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+    }
+
+    .feedback-item strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .result-layout {
+      display: grid;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .result-block {
+      background: rgba(255,255,255,0.54);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+    }
+
+    .result-block h3 {
+      font-size: 20px;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .result-block ul {
+      margin: 10px 0 0;
+      padding-left: 20px;
+      line-height: 1.6;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--line);
+      margin: 24px 0;
+    }
+
+    .theory-panel {
+      display: grid;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .theory-item {
+      padding: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.44);
+      border-radius: var(--radius-lg);
+    }
+
+    .theory-item strong { color: var(--accent); }
+
+    .footer-note {
+      margin: 18px auto 0;
+      max-width: var(--max);
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (min-width: 760px) {
+      .app-shell { padding: 28px; }
+      .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .result-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .result-block.wide { grid-column: 1 / -1; }
+    }
+
+    @media print {
+      body { background: white; }
+      body::before, .topbar, .actions, .no-print, .footer-note { display: none !important; }
+      .app-shell { width: 100%; max-width: none; padding: 0; }
+      .card {
+        box-shadow: none;
+        border: 0;
+        border-radius: 0;
+        padding: 0;
+        background: white;
+      }
+      .card::before { display: none; }
+      .result-layout { display: block; }
+      .result-block { page-break-inside: avoid; margin-bottom: 12px; }
+      h1 { font-size: 34px; }
+      h2 { font-size: 28px; }
+      p, li { font-size: 12pt; }
+    }
+
+
+    .tag.load-tag {
+      background: rgba(200, 255, 61, 0.44);
+      border-color: rgba(35, 32, 29, 0.18);
+      color: var(--text);
+      font-weight: 760;
+    }
+
+    .load-dots .dot.on { background: var(--accent-2); box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.16); }
+
+    @media (min-width: 760px) {
+      .theory-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar no-print">
+      <div class="brand"><span class="brand-mark"></span><span>Симуляция ЭИ · MVP</span></div>
+      <div id="topProgress" class="progress-pill hidden"></div>
+    </header>
+    <main id="app" class="card screen"></main>
+    <p class="footer-note no-print">Локальный MVP: ответы сохраняются только в браузере на этом устройстве. Персональные данные не запрашиваются.</p>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "ei_simulation_mvp_state_v8";
+
+    const reactionMeta = {
+      withdraw: {
+        label: "пауза, молчание или действие без лишнего разговора",
+        short: "тихая пауза",
+        resultPhrase: "останавливаться, замолкать или действовать без лишнего разговора",
+        value: "снизить шум, не усугубить конфликт и выиграть несколько секунд на внутреннюю сборку",
+        cost: "твоя позиция может так и не прозвучать, а напряжение останется внутри и будет работать фоном",
+        strength: "умение не разгонять конфликт с первых секунд",
+        branch: "распознавания эмоций",
+        practice: "Пауза с возвратом. Когда хочется исчезнуть из разговора, не уходи в полную тишину. Раз: коротко обозначь паузу — «Мне нужно минуту подумать». Два: назови точку возврата — «Я вернусь с ответом после встречи». Три: действительно вернись. Это тренирует первую ветвь ЭИ — распознавать эмоцию до того, как она заберёт у тебя голос."
+      },
+      defend: {
+        label: "быстрая защита границы",
+        short: "быстрая защита границы",
+        resultPhrase: "быстро защищать границу",
+        value: "другим понять, что ты очень тонко чувствуешь, когда на тебя давят и не позволишь разговору съехать в несправедливый тон",
+        cost: "форма ответа может прозвучать жёстче твоего смысла, и тогда собеседник начнёт реагировать на тон, а не на суть",
+        strength: "способность замечать нарушение границы и реагировать на него",
+        branch: "управления эмоциями",
+        practice: "Граница без давления. Когда хочется отстоять свои границы, не выбирай резкую эмоциональную реакцию, а в своем ответе раздели смысл и форму. Раз: коротко останови нервное обсуждение — «В таком тоне мне сложно обсуждать задачу». Два: верни предмет разговора — «Давай к фактам». Три: предложи следующий шаг для решения выявленной проблемы. Это близко к навыкам регуляции эмоций: энергия злости остаётся твоим ресурсом, но не разрушает диалог."
+      },
+      explain: {
+        label: "объяснение, уточнение или попытка вернуть ситуацию в понятное русло",
+        short: "объяснение",
+        resultPhrase: "объяснять, уточнять и возвращать ситуацию в понятное русло",
+        value: "сохранить контакт, показать добросовестность и снизить неопределённость",
+        cost: "можно взять на себя слишком много объяснений и не сразу обозначить, где проходит твоя граница",
+        strength: "умение искать ясность и поддерживать разговор даже в напряжении",
+        branch: "понимания эмоций",
+        practice: "Объяснение с границей. Если хочется сразу доказать, что ты не виноват(а), поставь порядок. Раз: назови главное — «Поясню, что произошло». Два: отдели факты от оценок. Три: спроси, какой следующий шаг нужен сейчас. Это развивает ветвь понимания эмоций: ты видишь не только событие, но и причину напряжения."
+      },
+      negotiate: {
+        label: "обсуждение и формулирование договорённости",
+        short: "договорённость",
+        resultPhrase: "обсуждать ситуацию и собирать договорённость",
+        value: "удерживать фокус на следующем шаге, не растворяясь полностью в эмоциях",
+        cost: "можно слишком быстро уйти в рациональность и не заметить, что тебя действительно задело",
+        strength: "умение переводить напряжение в договорённость и действие",
+        branch: "использования эмоций как информации",
+        practice: "Договорённость с проверкой эмоции. Перед тем как чинить процесс, остановись на три вопроса. Раз: что меня здесь задело? Два: какой факт это подтверждает? Три: какую договорённость нужно зафиксировать? Это тренирует использование эмоций как информации: эмоция становится не шумом, а подсказкой, где процесс требует ясности."
+      }
+    };
+
+    const needMeta = {
+      safety: "сохранить спокойствие и безопасность",
+      recognition: "чтобы твой вклад заметили и поняли",
+      control: "вернуть контроль над ситуацией",
+      autonomy: "защитить своё право на границы и выбор",
+      acceptance: "не разрушить отношения и контакт",
+      fairness: "чтобы с тобой обращались справедливо",
+      clarity: "понять, что на самом деле происходит"
+    };
+
+    const emotionMeta = {
+      hurt: "меня задело",
+      tension: "я напрягся(лась)",
+      anger: "я разозлился(лась)",
+      awkwardness: "мне стало неловко",
+      confusion: "я растерялся(лась)",
+      withdrawal: "мне захотелось исчезнуть из разговора",
+      pressure: "я почувствовал(а), что на меня давят"
+    };
+
+    const defaultReasonOptions = [
+      { id: "not_escalate", text: "Хотелось не усугублять.", need: "safety" },
+      { id: "protect_self", text: "Хотелось защитить себя.", need: "autonomy" },
+      { id: "be_understood", text: "Было важно, чтобы меня поняли.", need: "recognition" },
+      { id: "return_control", text: "Хотелось вернуть контроль над ситуацией.", need: "control" },
+      { id: "keep_contact", text: "Не хотелось испортить отношения.", need: "acceptance" },
+      { id: "not_sure", text: "Я не сразу понял(а), как лучше ответить.", need: "clarity" },
+      { id: "be_respected", text: "Было важно, чтобы со мной считались.", need: "fairness" }
+    ];
+
+    const stateOptions = [
+      { id: "hurt", text: "меня задело", emotion: "hurt" },
+      { id: "tension", text: "я напрягся(лась)", emotion: "tension" },
+      { id: "anger", text: "я разозлился(лась)", emotion: "anger" },
+      { id: "awkwardness", text: "мне стало неловко", emotion: "awkwardness" },
+      { id: "confusion", text: "я растерялся(лась)", emotion: "confusion" },
+      { id: "withdrawal", text: "мне захотелось исчезнуть из разговора", emotion: "withdrawal" },
+      { id: "pressure", text: "я почувствовал(а), что на меня давят", emotion: "pressure" }
+    ];
+
+    const scenes = [
+      {
+        id: "scene-1",
+        level: 1,
+        title: "Публичное замечание",
+        context: "На общей встрече обсуждают статус задачи. До этого вводные менялись, часть деталей всплывала по дороге, но сейчас это будто исчезло из общей памяти.",
+        stimulus: "Коллега внезапно при других тебе говорит: «Мы с тобой это уже обсуждали. Почему же снова задание не готово?»",
+        load: 1,
+        actionSubtitle: "Прочитай все варианты и выбери тот, который больше похож на твою первую автоматическую реакцию. Не выбирай «правильный» ответ, а пробуй найти свой или близкий к нему. Пока ты на этой странице, можешь изменить выбор, если передумал(а). Или — шагай дальше.",
+        reasonSubtitle: "Здесь не нужно доказывать почему твой выбор был идеальным, просто укажи, на твой взгляд, самую близкую тебе причину.",
+        stateSubtitle: "Не обязательно быть предельно точным при выборе главной эмоции, достаточно найти состояние, которое похоже на то, что ты почувствуешь в такой ситуации в первую очередь.",
+        options: [
+          { id: "s1-a", code: "withdraw", text: "Скорее промолчу и попробую потом всё исправить сам(а)." },
+          { id: "s1-b", code: "defend", text: "Скажу, что такой тон общения мне не подходит, особенно при всех." },
+          { id: "s1-c", code: "explain", text: "Начну объяснять, почему так получилось и что изменилось по вводным." },
+          { id: "s1-d", code: "negotiate", text: "Уточню, что именно сейчас критично, и предложу договориться о следующем шаге." }
+        ],
+        reasons: defaultReasonOptions,
+        reflectionQuestion: "Что в этот момент важнее всего вернуть в разговор: факты, спокойствие, уважительный тон или следующий шаг?",
+        eiNote: "Эта сцена проверяет первую ветвь эмоционального интеллекта — распознавание эмоции. Если ты успеваешь заметить, что тебя задело, у тебя появляется шанс выбрать действие, а не просто отреагировать."
+      },
+      {
+        id: "scene-2",
+        level: 1,
+        title: "Просьба “на пять минут”",
+        context: "Рабочий день почти закончился. У тебя уже есть свой список задач, личные планы и усталость, но в чат прилетает маленькая просьба, которая почему-то выглядит больше, чем обещанные пять минут.",
+        stimulus: "Руководитель пишет: «Можешь просто сегодня вечером доделать эту часть? Там недолго». ",
+        load: 1,
+        actionSubtitle: "Ищи здесь не то, как было бы идеально, а то, что правда могло бы случиться с тобой в первые секунды. Ведь первая реакция часто честнее длинной речи, написанной «задним умом».",
+        reasonSubtitle: "Попробуй поймать не первую причину, которая показалась подходящей, а внутренний мотив: что ты этим действием хотел(а) для себя сохранить, защитить или прояснить? А для этого сначала прочитай все варианты.",
+        stateSubtitle: "Какое состояние в похожей ситуации будет тебе ближе всего? Не нужно угадывать красивое слово: выбери то, что первым поднимается внутри, когда чужие «пять минут» не помещаются в этот список.",
+        options: [
+          { id: "s2-a", code: "withdraw", text: "Скорее соглашусь молча, а потом разберусь, как успеть." },
+          { id: "s2-b", code: "defend", text: "Сразу скажу, что сегодня вечером уже не могу брать это в работу." },
+          { id: "s2-c", code: "explain", text: "Начну подробно объяснять, какие задачи у меня уже стоят и почему это сложно." },
+          { id: "s2-d", code: "negotiate", text: "Уточню приоритет и предложу вариант: что можно сделать сегодня, а что перенести." }
+        ],
+        reasons: [
+          { id: "evening", text: "Хотелось защитить вечер и право не быть доступным(ой) всегда.", need: "autonomy" },
+          { id: "not_fail", text: "Не хотелось подвести человека, который рассчитывает на помощь.", need: "acceptance" },
+          { id: "show_load", text: "Было важно показать, что у меня уже есть задачи, а время не резиновое.", need: "recognition" },
+          { id: "priority", text: "Хотелось понять, насколько эта просьба действительно приоритетна.", need: "clarity" },
+          { id: "control_time", text: "Хотелось вернуть контроль над своим временем.", need: "control" },
+          { id: "avoid_conflict", text: "Проще было согласиться, чем вступать в разговор о границах.", need: "safety" },
+          { id: "fairness", text: "Было важно, чтобы мою занятость тоже считали реальным обстоятельством.", need: "fairness" }
+        ],
+        reflectionQuestion: "Какая формулировка одновременно защищает вашу свободу планировать свой вечер и оставляет рабочий контакт живым и перспективным?",
+        eiNote: "Эта ситуация еще одна возможность изучить, как вы управляете эмоциями: способны ли удержать раздражение и преобразовать его в ясное и конструктивное сообщение, а не «хлопнуть дверью» в переписке. Строим личную траекторию: продолжайте отрабатывать навыки регуляции не самой эмоции, а способа её внешнего проявления. Например, тренируйтесь отлавливать первую мысль, которая обычно и запускает эмоциональную реакцию."
+      },
+      {
+        id: "scene-3",
+        level: 2,
+        title: "Обесцененный вклад",
+        context: "Ты показываешь результат, над которым работал(а) несколько дней. Встреча идёт быстро, времени на объяснение мало, и одна фраза будто одним движением занижает весь всей твоей работы.",
+        stimulus: "Коллега говорит: «Ну это же базовое. Тут особо нечем гордиться». ",
+        load: 2,
+        actionSubtitle: "На этом шаге важна не безупречность действия, которое ты выберешь из списка, а сможешь ли ты среди вариантов узнать себя. Какой из них ближе к твоей обычной реакции, когда тебя задевают или ставят в неловкое положение?",
+        reasonSubtitle: "Причина твоего поведения не обязана демонстрировать твое благородство, быть идеальной стилистически и сформулирована как индульгенция. Самое главное — это понять, что именно в этой ситуации оказалось для тебя значимым.",
+        stateSubtitle: "Если несколько вариантов из списка тебе подходят, выбери тот, который откликнулся раньше остальных. В эмоциональном интеллекте первый сигнал часто важнее красивого анализа.",
+        options: [
+          { id: "s3-a", code: "withdraw", text: "Скорее сверну обсуждение и потом сам(а) решу, стоит ли что-то дорабатывать." },
+          { id: "s3-b", code: "defend", text: "Скажу, что такая оценка звучит обесценивающе и не помогает обсуждать работу." },
+          { id: "s3-c", code: "explain", text: "Начну перечислять, что именно было сделано и почему это заняло время." },
+          { id: "s3-d", code: "negotiate", text: "Предложу перейти от общей оценки к конкретике: что именно нужно улучшить." }
+        ],
+        reasons: [
+          { id: "protect_work", text: "Хотелось защитить работу, в которую я вложил(а) силы.", need: "recognition" },
+          { id: "keep_face", text: "Не хотелось потерять лицо перед другими.", need: "safety" },
+          { id: "fair_talk", text: "Было важно, чтобы обсуждение оставалось справедливым.", need: "fairness" },
+          { id: "facts", text: "Хотелось вернуть разговор к фактам, а не к общей оценке.", need: "clarity" },
+          { id: "control_frame", text: "Хотелось вернуть контроль над рамкой обсуждения.", need: "control" },
+          { id: "avoid_damage", text: "Не хотелось окончательно портить контакт.", need: "acceptance" }
+        ],
+        reflectionQuestion: "Как можно защитить ценность работы так, чтобы разговор не застрял в обиде, а вернулся к предмету обсуждения?",
+        eiNote: "Здесь полезна ветвь понимания эмоций: обида часто говорит не только о неприятной фразе, но и о потребности в признании вклада. Когда причина названа, появляется больше вариантов действия."
+      },
+      {
+        id: "scene-4",
+        level: 2,
+        title: "Правила изменились по дороге",
+        context: "Задача несколько раз менялась. Теперь от тебя ждут результат так, будто всё было ясно с самого начала, хотя информация не была собрана и зафиксирована в одном месте.",
+        stimulus: "Руководитель говорит: «Почему ты не учёл(а) новые вводные? Мы же все в потоке». ",
+        load: 2,
+        actionSubtitle: "Если несколько вариантов из списка тебе подходят, выбери тот, который откликнулся раньше остальных. В эмоциональном интеллекте первый сигнал часто важнее красивого анализа.",
+        reasonSubtitle: "Здесь важно увидеть причину своей реакции, а не на основе поверхностной оценке ситуации. Что именно оказалось болезненным: неопределённость, несправедливость, потеря контроля или необходимость снова всё собирать?",
+        stateSubtitle: "Какое состояние в похожей ситуации будет тебе ближе всего? Попробуй выбрать не умом, а по первому внутреннему отклику.",
+        options: [
+          { id: "s4-a", code: "withdraw", text: "Скорее кивну и потом попробую тихо переделать без лишнего разговора." },
+          { id: "s4-b", code: "defend", text: "Скажу, что вводные не были зафиксированы, и ответственность здесь не только на мне." },
+          { id: "s4-c", code: "explain", text: "Начну восстанавливать всю цепочку изменений и показывать, где возникла путаница." },
+          { id: "s4-d", code: "negotiate", text: "Предложу зафиксировать актуальные вводные и сроки исполнения задач." }
+        ],
+        reasons: [
+          { id: "fix_chaos", text: "Хотелось превратить туман размытых данных в договорённость о результате.", need: "clarity" },
+          { id: "not_alone", text: "Было важно показать, что ответственность распределена шире, чем сейчас звучит.", need: "fairness" },
+          { id: "regain_control", text: "Хотелось вернуть контроль над правилами задачи.", need: "control" },
+          { id: "avoid_long_fight", text: "Не хотелось открывать длинный спор о том, кто что сказал раньше.", need: "safety" },
+          { id: "be_seen", text: "Хотелось, чтобы мою работу оценивали с учётом реальных вводных.", need: "recognition" },
+          { id: "save_contact", text: "Было важно сохранить рабочий контакт, но не согласиться с хаосом молча.", need: "acceptance" }
+        ],
+        reflectionQuestion: "Что нужно зафиксировать письменно сразу после разговора, чтобы эмоция способствовала улучшению процесса?",
+        eiNote: "Ты предлагаешь зафиксировать актуальные вводные и сроки исполнения задач. Это попытка с твоей стороны превратить туман размытых данных в договорённость о результате. Так у задачи появляются критерии успеха: что делаем, по каким правилам и к какому времени."
+      },
+      {
+        id: "scene-5",
+        level: 3,
+        title: "Неудобная тишина",
+        context: "Команда обсуждает решение, которое все обходят стороной. Видно, что в процессе есть слабое место, но его не хотят называть: всем и так тяжело, а уточнение может разрушить красивую картинку согласия.",
+        stimulus: "Старший коллега говорит: «Давай сейчас не будем это менять. Если начнём уточнять, всё опять развалится». ",
+        load: 3,
+        actionSubtitle: "Эта сцена передает ситуацию, в которой изначально все на пределе. Выбирай не стратегию поведения, которую потом можно разместить в резюме, а шаг, с которым ты согласился(лась) раньше других.",
+        reasonSubtitle: "Здесь важно выбрать причину не ради красивого объяснения, а ради честной карты: что ты защищаешь — спокойствие встречи, качество решения, отношения или собственное право задавать вопросы?",
+        stateSubtitle: "Какое состояние в похожей ситуации будет тебе ближе всего? На высоком уровне нагрузки эмоция часто приходит быстрее аргумента.",
+        options: [
+          { id: "s5-a", code: "withdraw", text: "Скорее промолчу, чтобы не ломать встречу, а потом попробую разобраться отдельно." },
+          { id: "s5-b", code: "defend", text: "Скажу, что замалчивать проблему сейчас опаснее, чем спокойно её уточнить." },
+          { id: "s5-c", code: "explain", text: "Попробую объяснить, почему без уточнения это решение потом может развалиться сильнее." },
+          { id: "s5-d", code: "negotiate", text: "Предложу коротко зафиксировать риск и договориться, что именно проверяем после встречи." }
+        ],
+        reasons: [
+          { id: "quality", text: "Было важно не жертвовать качеством решения ради видимого спокойствия.", need: "fairness" },
+          { id: "not_break", text: "Не хотелось быть человеком, из-за которого встреча развалится окончательно.", need: "acceptance" },
+          { id: "professional_boundary", text: "Это профессиональная граница подхода к своей работе, которую ты не готова перешагнуть: не всё, что ускоряет встречу, помогает делу.", need: "autonomy" },
+          { id: "clarify", text: "Хотелось вернуть ясность туда, где все делают вид, что и так понятно.", need: "clarity" },
+          { id: "control_risk", text: "Хотелось управлять риском сейчас, а не тушить пожар потом.", need: "control" },
+          { id: "safe_room", text: "Хотелось сохранить безопасность разговора, чтобы люди не ушли в защиту.", need: "safety" }
+        ],
+        reflectionQuestion: "Как можно поднять неудобный вопрос так, чтобы он звучал не как атака, а как забота о результате?",
+        eiNote: "Управление эмоциями: сильная злость может быть энергией для защиты своих границ, но форму лучше выбирать такую, чтобы она открывала возможности, опираясь на факты, а не прекращала разговор переходом на личности. Личная траектория на заметку: начни с четвёртой ветви эмоционального интеллекта: регулировать не саму эмоцию, а способ её выхода наружу. Граница остаётся, удар по контакту уменьшается."
+      },
+      {
+        id: "scene-6",
+        level: 3,
+        title: "Несправедливое обвинение",
+        context: "На встрече с несколькими участниками обсуждают общий провал. Ответственность распределена неясно, но фокус внезапно смещается на тебя.",
+        stimulus: "Один из участников говорит: «Из-за тебя команда выглядит непрофессионально». ",
+        load: 3,
+        actionSubtitle: "Смотри не на то, что звучало бы благородно в пересказе, а на то, как тело и голос могли бы ответить в первые секунды.",
+        reasonSubtitle: "Причина здесь может быть не красивой, зато точной. Что сильнее всего хочется вернуть: справедливость, контроль, уважение или возможность говорить фактами?",
+        stateSubtitle: "Какое состояние в похожей ситуации будет тебе ближе всего? На этом уровне важно поймать не идеальный анализ, а первый сигнал.",
+        options: [
+          { id: "s6-a", code: "withdraw", text: "Скорее замолчу, чтобы не сорваться, и потом буду переживать это отдельно." },
+          { id: "s6-b", code: "defend", text: "Скажу, что не принимаю такую формулировку и прошу обсуждать факты." },
+          { id: "s6-c", code: "explain", text: "Начну подробно объяснять, что именно было не в моей зоне ответственности." },
+          { id: "s6-d", code: "negotiate", text: "Предложу разложить ситуацию по фактам: что произошло, где был сбой и что делаем дальше." }
+        ],
+        reasons: defaultReasonOptions,
+        reflectionQuestion: "Как прозвучала бы защита твоих граница, если убрать из неё лишнее давление, но оставить твёрдую убежденность?",
+        eiNote: "Здесь включается управление эмоцией: не подавить злость, а дать ей цивилизованный выход. Это четвёртая ветвь ЭИ — регулировать свой способ действовать. Строим личную траекторию: начни с четвёртой ветви эмоционального интеллекта и отработай навыки регуляции не самой эмоции, а способа её внешнего проявления. Граница остаётся, давление на взаимодействие уменьшается."
+      }
+    ];
+
+    const levelNotes = {
+      1: {
+        title: "Первый промежуточный итог",
+        text: "Первые две сцены уже показывают, куда рука тянется раньше головы: промолчать, защититься, объясниться или обсудить и сформулировать договорённость. Это ещё не портрет личности, а первые карандашные линии на карте реакции.",
+        prompt: "Если какой-то маршрут повторился, не спеши его ругать. Повтор — это не провал, а подсветка автоматизма. Теперь можно идти дальше и смотреть, усилится он под нагрузкой или уступит место другой тактике."
+      },
+      2: {
+        title: "Второй промежуточный итог",
+        text: "На втором уровне напряжение уже не просто слегка стучит ложечкой по чашке, а довольно уверенно садится за стол. Здесь особенно видно, что эмоция часто защищает не абстрактное самолюбие, а вполне конкретные вещи: вклад, справедливость, ясность, профессиональные границы.",
+        prompt: "Дальше будет выше нагрузка. Смотри не только на выбранные ответы, но и на то, что они пытаются сохранить для тебя: контакт, контроль, качество работы или право быть услышанным(ой)."
+      },
+      3: {
+        title: "Третий уровень завершён",
+        text: "Теперь у внутреннего наблюдателя есть не только впечатления, но и данные. Шесть ситуаций — не вся жизнь, но уже достаточно, чтобы увидеть повторяющиеся тактики и первые точки роста.",
+        prompt: "Давай соберём карту: какие реакции включались чаще, какая эмоция подавала сигнал и с какой ветви эмоционального интеллекта лучше начать развитие."
+      }
+    };
+
+    const theoryItems = [
+      ["Питер Сэловей, Джон Майер и Дэвид Карузо", "Основатели теории эмоционального интеллекта описывают ЭИ как способность воспринимать эмоции, использовать их как информацию, понимать причины эмоциональных состояний и управлять эмоциями так, чтобы они помогали мышлению и действию. В симуляции эти четыре ветви превращаются в простые шаги: заметить, понять, назвать и выбрать действие осознаннее."],
+      ["Пол Экман", "Экман много работал с выражением эмоций и эмоциональными сигналами. В симуляции это важно для момента, когда человек ещё не успел красиво всё объяснить, но уже почувствовал напряжение, злость, неловкость или давление."],
+      ["Лиза Фельдман Барретт", "Барретт показывает, что эмоции формируются в контексте и зависят от того, как мы объясняем себе происходящее. Поэтому мы спрашиваем не только «что ты сделал(а) бы», но и «почему именно так»."],
+      ["Роберт Плутчик", "Плутчик помогает увидеть, что эмоции бывают разной интенсивности, смешиваются и подталкивают к действию. В симуляции это проявляется в выборе состояния и в том, как быстро оно превращается в поведение."],
+      ["П. В. Симонов", "Симонов рассматривал эмоцию как сигнал значимости потребности и вероятности её удовлетворения. Поэтому мы не спрашиваем «какая потребность активировалась», а уточняем: что ты этим действием хотел(а) сохранить, защитить или прояснить."],
+      ["Е. П. Ильин", "Ильин помогает смотреть на эмоции как на регуляторы поведения. В симуляции эмоция не мешает человеку быть профессиональным, а показывает, где поведение начинает меняться под нагрузкой."],
+      ["Уильям Шутц: FIRO — Fundamental Interpersonal Relations Orientation (теория Фундаментальных ориентаций межличностных отношений)", "Шутц описывает межличностные темы включённости, контроля и принятия. В рабочих разговорах они часто звучат не напрямую: человек спорит о сроках, а на самом деле защищает контроль, признание или право быть принятым всерьёз."]
+    ];
+
+    const defaultState = {
+      screen: "start",
+      sceneIndex: 0,
+      questionStep: "action",
+      answers: {},
+      actionOrders: {},
+      lastFeedbackScene: null
+    };
+
+    let state = loadState();
+
+    function loadState() {
+      try { return { ...defaultState, ...(JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}) }; }
+      catch { return { ...defaultState }; }
+    }
+
+    function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+    function setState(patch) {
+      state = { ...state, ...patch };
+      saveState();
+      render();
+    }
+
+    function clearProgress() {
+      localStorage.removeItem(STORAGE_KEY);
+      state = { ...defaultState };
+      render();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#039;", '"': "&quot;" }[char]));
+    }
+
+    function shuffle(array) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function ensureActionOrder(scene) {
+      if (!state.actionOrders[scene.id]) {
+        state.actionOrders[scene.id] = shuffle(scene.options).map(option => option.id);
+        saveState();
+      }
+      return state.actionOrders[scene.id].map(id => scene.options.find(option => option.id === id)).filter(Boolean);
+    }
+
+    function getCurrentScene() { return scenes[state.sceneIndex] || scenes[0]; }
+    function getAnswer(sceneId) { return state.answers[sceneId] || {}; }
+
+    function saveAnswer(sceneId, patch) {
+      state.answers = { ...state.answers, [sceneId]: { ...getAnswer(sceneId), ...patch } };
+      saveState();
+      render();
+    }
+
+    function topProgressHtml() {
+      if (!["scene", "question", "feedback", "level", "final"].includes(state.screen)) return "";
+      if (state.screen === "final") return "Карта самонаблюдения";
+      if (state.screen === "level") return `Промежуточный итог · уровень ${state.level}`;
+      const scene = getCurrentScene();
+      return `Сцена ${Math.min(state.sceneIndex + 1, 6)} из 6 · уровень ${scene.level}`;
+    }
+
+    function loadDots(load) {
+      return `<span class="load-dots" aria-label="Нагрузка ${load} из 3">${[1,2,3].map(i => `<span class="dot ${i <= load ? "on" : ""}"></span>`).join("")}</span>`;
+    }
+
+    function optionButton(option, selectedId, onClickCall) {
+      return `<button class="option ${selectedId === option.id ? "selected" : ""}" onclick="${onClickCall}"><span class="label">${escapeHtml(option.text)}</span></button>`;
+    }
+
+    function renderStart() {
+      return `
+        <section class="screen">
+          <p class="kicker">Симуляция эмоционального интеллекта</p>
+          <h1>Эмоциональный интеллект в сложном разговоре</h1>
+          <p class="lead">Ты пройдёшь шесть рабочих ситуаций, где эмоции включаются раньше, чем появляется идеальная фраза для ответа. Симуляция поможет увидеть свои действия в такие моменты и понять, как использовать способности эмоционального интеллекта: замечать эмоцию, понимать её причину, называть состояние и выбирать действие осознаннее.</p>
+          <div class="notice">
+            <strong>Здесь не нужно нажимать кнопки с «правильными» ответами.</strong>
+            <p>Это пространство для самонаблюдения: чтобы увидеть и понять свои действия, когда эмоции включаются, и получить первые рекомендации, что с ними можно сделать.</p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" onclick="setState({screen:'consent'})">Начать симуляцию</button>
+            <button class="btn btn-secondary" onclick="setState({screen:'theory'})">Теоретические основы</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderConsent() {
+      return `
+        <section class="screen">
+          <p class="kicker">Перед тем как начать</p>
+          <h2>Договоримся о рамке</h2>
+          <p class="lead">Ты здесь не для того, чтобы получить оценку или нажать больше кнопок с правильными ответами, а для того, чтобы увидеть и понять свои реакции в разных ситуациях под воздействием эмоций, понять почему они возникают и получить первые рекомендации — что с ними сделать.</p>
+          <div class="notice">
+            <p>Ответы, которые ты выбираешь, здесь не сравниваются с какой-то нормой и не превращаются в диагноз. Они до конца остаются твоим уникальным ресурсом и данными для твоего самонаблюдения.</p>
+            <p>Результатом будет личная карта самонаблюдения: в каких ситуациях какие тактики чаще включались, где в этом скрывается твоя сила и какую цену ты можешь за это заплатить.</p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" onclick="setState({screen:'instruction'})">ОК, иду с настроем</button>
+            <button class="btn btn-ghost" onclick="setState({screen:'start'})">Вернуться на первый экран</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderTheory() {
+      return `
+        <section class="screen">
+          <p class="kicker">Теоретические основы</p>
+          <h2>Почему вообще эмоции — это интеллект</h2>
+          <p class="lead">Каждая из перечисленных здесь теорий по своему помогают понять, что такое эмоциональный интеллект (даже если напрямую об этом не упоминают). Но здесь не будет в финале экзамена и поэтому теория нам нужна как карта или система координат: она поможет тебе увидеть, что эмоция — не бесполезный шум в системе, а сигнал о значимости событий, неудовлетворенных потребностях и способах осознанного действия.</p>
+          <div class="theory-panel">
+            ${theoryItems.map(([title, text]) => `<div class="theory-item"><strong>${escapeHtml(title)}</strong><p>${escapeHtml(text)}</p></div>`).join("")}
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" onclick="setState({screen:'instruction'})">Понятно, начать</button>
+            <button class="btn btn-secondary" onclick="setState({screen:'start'})">Вернуться к началу</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderInstruction() {
+      return `
+        <section class="screen">
+          <p class="kicker">Инструкция по применению</p>
+          <h2>Не надо быть идеальной версией себя</h2>
+          <p class="lead">В каждой сцене будет три шага и ты сделаешь три выбора, чтобы понять: первое — что в конкретной ситуации ты, скорее всего, сделал(а) бы; второе — задуматься, почему, возможно, именно так поступил(а) бы; и третье — прочувствовать, какое состояние ты скорее всего прожил(а).</p>
+          <div class="scene-box">
+            <p><strong>Главное правило:</strong> прочитай все варианты и выбери тот, который больше похож на твою первую автоматическую реакцию. Не выбирай «правильный» ответ — попробуй найти свой или хотя бы близкий к нему.</p>
+            <p>Один человек в сложных ситуациях молчит, не вступая в спор. Другой сразу начинает защищаться. Третий, прежде чем конфликтовать, пытается объяснить свое поведение. А другой собирает факты и пробует договориться. Ни один вариант сам по себе не хороший и не плохой.</p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" onclick="startSimulation()">Понятно, пробую первую сцену</button>
+            <button class="btn btn-secondary" onclick="setState({screen:'consent'})">Вернуться к рамке</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function startSimulation() { setState({ screen: "scene", sceneIndex: 0, questionStep: "action" }); }
+
+    function continueProgress() {
+      const completed = Object.values(state.answers).filter(answer => answer.actionId && answer.reasonId && answer.stateId).length;
+      if (completed >= scenes.length) setState({ screen: "final" });
+      else setState({ screen: "scene", sceneIndex: completed, questionStep: "action" });
+    }
+
+    function renderSceneIntro() {
+      const scene = getCurrentScene();
+      ensureActionOrder(scene);
+      return `
+        <section class="screen">
+          <p class="kicker">Сцена ${state.sceneIndex + 1} из ${scenes.length}</p>
+          <h2>${escapeHtml(scene.title)}</h2>
+          <div class="meta-row">
+            <span class="tag load-tag">уровень эмоциональной нагрузки ${loadDots(scene.load)}</span>
+          </div>
+          <div class="scene-box">
+            <p>${escapeHtml(scene.context)}</p>
+            <div class="quote">${escapeHtml(scene.stimulus)}</div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" onclick="setState({screen:'question', questionStep:'action'})">Перехожу к выбору</button>
+            <button class="btn btn-secondary" onclick="goBackFromSceneIntro()">Назад</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function goBackFromSceneIntro() {
+      if (state.sceneIndex === 0) setState({ screen: "instruction" });
+      else setState({ screen: "feedback", sceneIndex: state.sceneIndex - 1 });
+    }
+
+    function renderQuestion() {
+      const scene = getCurrentScene();
+      const answer = getAnswer(scene.id);
+      const step = state.questionStep;
+      if (step === "action") return renderActionQuestion(scene, answer);
+      if (step === "reason") return renderReasonQuestion(scene, answer);
+      return renderStateQuestion(scene, answer);
+    }
+
+    function renderQuestionHeader(scene, title, subtitle) {
+      return `
+        <p class="kicker">Сцена ${state.sceneIndex + 1} из ${scenes.length} · ${escapeHtml(scene.title)}</p>
+        <h2>${title}</h2>
+        <p class="lead">${subtitle}</p>
+      `;
+    }
+
+    function renderActionQuestion(scene, answer) {
+      const options = ensureActionOrder(scene);
+      return `
+        <section class="screen">
+          ${renderQuestionHeader(scene, "Что ты, скорее всего, сделал(а) бы в первые секунды?", scene.actionSubtitle)}
+          <div class="grid">
+            ${options.map(option => optionButton(option, answer.actionId, `selectAction('${scene.id}', '${option.id}', '${option.code}')`)).join("")}
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" ${answer.actionId ? "" : "disabled"} onclick="setState({questionStep:'reason'})">Иду к причине</button>
+            <button class="btn btn-secondary" onclick="setState({screen:'scene'})">Назад</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function selectAction(sceneId, optionId, code) { saveAnswer(sceneId, { actionId: optionId, reactionCode: code }); }
+
+    function renderReasonQuestion(scene, answer) {
+      const reasons = scene.reasons || defaultReasonOptions;
+      return `
+        <section class="screen">
+          ${renderQuestionHeader(scene, "Почему ты, возможно, так поступил(а) бы?", scene.reasonSubtitle)}
+          <div class="grid">
+            ${reasons.map(option => optionButton(option, answer.reasonId, `selectReason('${scene.id}', '${option.id}', '${option.need}')`)).join("")}
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" ${answer.reasonId ? "" : "disabled"} onclick="setState({questionStep:'state'})">Иду к состоянию</button>
+            <button class="btn btn-secondary" onclick="setState({questionStep:'action'})">Назад</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function selectReason(sceneId, optionId, need) { saveAnswer(sceneId, { reasonId: optionId, needCode: need }); }
+
+    function renderStateQuestion(scene, answer) {
+      return `
+        <section class="screen">
+          ${renderQuestionHeader(scene, "Какое состояние в похожей ситуации будет тебе ближе всего?", scene.stateSubtitle)}
+          <div class="grid">
+            ${stateOptions.map(option => optionButton(option, answer.stateId, `selectFeeling('${scene.id}', '${option.id}', '${option.emotion}')`)).join("")}
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" ${answer.stateId ? "" : "disabled"} onclick="completeScene()">Иду за данными для самоанализа</button>
+            <button class="btn btn-secondary" onclick="setState({questionStep:'reason'})">Назад</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function selectFeeling(sceneId, optionId, emotion) { saveAnswer(sceneId, { stateId: optionId, emotionCode: emotion }); }
+    function completeScene() { setState({ screen: "feedback", lastFeedbackScene: getCurrentScene().id }); }
+
+    const sceneReflectionCopy = {
+      "scene-1": {
+        intro: "Здесь напряжение возникает не только из-за вопроса о задаче. Важна публичность: рядом люди, и поэтому эмоция может включиться быстрее, чем спокойная фраза.",
+        byReaction: {
+          withdraw: "Ты скорее забираешь паузу и не выводишь реакцию наружу сразу. Это похоже на попытку удержать лицо и не добавить огня в разговор, где уже есть зрители.",
+          defend: "Ты останавливаешь не сам вопрос, а форму разговора. В этой реакции слышно: обсуждать задачу можно, но не через публичное давление.",
+          explain: "Ты стараешься вернуть факты на стол: что менялось, какие вводные были и почему задача не выглядит такой простой, как прозвучало в замечании.",
+          negotiate: "Ты переводишь разговор из обвинения в следующий шаг. Это попытка не спорить о прошлом на публике, а быстро собрать понятную договорённость."
+        },
+        strength: {
+          withdraw: "Ты не разгоняешь конфликт на глазах у других и оставляешь себе время, чтобы не отвечать из чистого напряжения.",
+          defend: "Ты замечаешь, что тон разговора тоже влияет на качество работы, и не готов(а) делать вид, что это мелочь.",
+          explain: "Ты умеешь восстанавливать контекст и показывать, что за короткой фразой часто стоит более длинная история.",
+          negotiate: "Ты удерживаешь фокус на результате: что нужно сделать сейчас, чтобы задача сдвинулась, а не застряла в публичном споре."
+        },
+        cost: {
+          withdraw: "твоя позиция может остаться невидимой, а чужая фраза закрепится в комнате как единственная версия событий",
+          defend: "собеседник может услышать прежде всего сопротивление тону и уже потом — смысл твоей позиции",
+          explain: "можно уйти в длинное оправдание и отдать собеседнику право решать, достаточно ли ты убедителен(на)",
+          negotiate: "можно слишком быстро перепрыгнуть через обиду и не заметить, что публичная форма разговора действительно задела"
+        },
+        branch: "Здесь полезно начинать с распознавания эмоции: заметить, что именно включилось — стыд, злость, напряжение или желание исчезнуть. Без этого действие легко выбирает не ты, а первая вспышка."
+      },
+      "scene-2": {
+        intro: "В этой сцене просьба выглядит маленькой, но цепляет большое: вечер, усталость, право распоряжаться своим временем и риск, что твоя доступность станет настройкой по умолчанию.",
+        byReaction: {
+          withdraw: "Ты скорее готов(а) проглотить раздражение и разобраться с задачей без лишнего разговора. Так сохраняется рабочий мир, но твой вечер может незаметно исчезнуть из переговоров.",
+          defend: "Ты быстро обозначаешь границу: время не бесконечное, а слово «недолго» не отменяет твоих планов и усталости.",
+          explain: "Ты пробуешь показать объём нагрузки: не отказываешься сразу, но хочешь, чтобы собеседник увидел, почему «пять минут» не помещаются в этот список.",
+          negotiate: "Ты переводишь просьбу в выбор приоритетов: если это правда важно сегодня, значит, что-то другое должно сдвинуться."
+        },
+        strength: {
+          withdraw: "Ты умеешь не превращать каждую неудобную просьбу в конфликт и можешь быстро взять задачу в работу.",
+          defend: "Ты защищаешь границы времени до того, как маленькая просьба превращается в постоянное правило.",
+          explain: "Ты делаешь невидимую нагрузку видимой: показываешь, что за твоим временем уже стоят задачи, планы и ответственность.",
+          negotiate: "Ты не споришь с просьбой, а возвращаешь разговор к приоритетам: что действительно важно и за счёт чего это делается."
+        },
+        cost: {
+          withdraw: "твоя доступность и ответственность могут превратиться в обязанность, а у твоего времени будто не останется ограничений",
+          defend: "если твоя фраза слишком короткая и не убедительная, собеседник может услышать не твое мнение о важности границ, а лишь твой отказ от сотрудничества",
+          explain: "можно начать доказывать право на усталость там, где достаточно спокойно обозначить рамку",
+          negotiate: "можно слишком быстро уйти в менеджмент приоритетов и не назвать простую вещь: тебе сейчас не окей"
+        },
+        branch: "Эта ситуация ещё одна возможность изучить, как ты управляешь эмоциями: способен(на) ли удержать раздражение и преобразовать его в ясное и конструктивное сообщение, а не «хлопнуть дверью» в переписке."
+      },
+      "scene-3": {
+        intro: "Здесь больная точка не в одной фразе, а в том, что твой вклад пытаются уменьшить одним движением. Эмоция может защищать не самолюбие, а смысл проделанной работы.",
+        byReaction: {
+          withdraw: "Ты скорее отходишь в сторону и не споришь за ценность работы прямо сейчас. Возможно, так меньше риска выглядеть обиженным(ой), но вклад остаётся без защиты.",
+          defend: "Ты быстро возвращаешь вес своей работе: показываешь, что фраза собеседника слишком легко списывает усилия и сложность задачи.",
+          explain: "Ты начинаешь раскладывать, что именно было сделано. Это попытка вернуть разговор от обесценивания к фактам.",
+          negotiate: "Ты предлагаешь обсуждать не вкус и не общую оценку, а критерии: что в работе считаем достаточным, сильным или требующим доработки."
+        },
+        strength: {
+          withdraw: "Ты не бросаешься защищаться в моменте и можешь удержать профессиональную форму даже тогда, когда тебя задели.",
+          defend: "Ты не позволяешь чужой короткой фразе стать окончательной рамкой для твоей работы.",
+          explain: "Ты умеешь восстанавливать ценность через конкретику: что сделано, зачем и где была сложность.",
+          negotiate: "Ты переводишь оценку из тумана в критерии, а значит, помогаешь разговору стать справедливее."
+        },
+        cost: {
+          withdraw: "важная работа остаётся без защиты, а чужая фраза становится итоговой рамкой рабочего обсуждения",
+          defend: "защита вклада может прозвучать как спор о признании, если не опереться на факты и критерии",
+          explain: "можно слишком долго доказывать очевидное и всё равно остаться в позиции оправдания",
+          negotiate: "можно спрятать живую обиду за процессом и не заметить, что тебе важно признание вклада"
+        },
+        branch: "Здесь особенно важна ветвь понимания эмоций: увидеть, что за раздражением или неловкостью может стоять потребность в признании, справедливости и ясных критериях."
+      },
+      "scene-4": {
+        intro: "В этой ситуации раздражает не только замечание, а хаос вводных: информация не была собрана и зафиксирована в одном месте, но отвечать предлагают так, будто всё всегда было ясно.",
+        byReaction: {
+          withdraw: "Ты скорее не споришь с хаосом вслух и пытаешься потом собрать задачу самостоятельно. Это снижает шум, но оставляет правила игры прежними.",
+          defend: "Ты обозначаешь, что ответственность здесь не может лежать только на тебе. Это попытка вернуть справедливость в разговор о результате.",
+          explain: "Ты восстанавливаешь цепочку изменений, чтобы показать: проблема не только в исполнении, но и в том, как менялись вводные.",
+          negotiate: "Ты предлагаешь зафиксировать актуальные вводные и сроки исполнения задач. Это попытка с твоей стороны превратить туман размытых данных в договорённость о результате."
+        },
+        strength: {
+          withdraw: "Ты умеешь не добавлять хаоса к хаосу и можешь сначала собрать картину сам(а).",
+          defend: "Ты не позволяешь неясной системе сделать тебя единственным носителем ответственности.",
+          explain: "Ты показываешь причинно-следственную цепочку, без которой разговор о качестве становится несправедливым.",
+          negotiate: "Ты создаёшь критерии успеха: что делаем, по каким правилам и к какому времени."
+        },
+        cost: {
+          withdraw: "если правила не проговорить, похожий хаос может повториться и снова прийти к тебе как личная вина",
+          defend: "можно застрять в распределении ответственности и не дойти до новых правил работы",
+          explain: "есть риск потратить силы на доказательство прошлого вместо фиксации будущего порядка",
+          negotiate: "договорённость помогает процессу, но может не объяснить, откуда возникло чувство несправедливости"
+        },
+        branch: "Здесь работает использование эмоций как информации. Раздражение показывает место, где процесс требует ясности: не просто «мне неприятно», а «нужно зафиксировать правила»."
+      },
+      "scene-5": {
+        intro: "Здесь неудобство сидит в тишине. Все будто понимают, что слабое место есть, но трогать его страшно: можно разрушить хрупкое согласие и снова открыть спор.",
+        byReaction: {
+          withdraw: "Ты скорее не поднимаешь вопрос вслух, чтобы не ломать встречу. Так сохраняется видимое спокойствие, но риск остаётся жить под ковром.",
+          defend: "Ты говоришь, что замалчивать проблему опаснее, чем спокойно её уточнить. Это защита качества решения, а не просто спор ради спора.",
+          explain: "Ты пытаешься показать, почему без уточнения решение может развалиться позже. Это способ сделать риск видимым, не превращая разговор в атаку.",
+          negotiate: "Ты предлагаешь коротко зафиксировать риск и договориться, что проверяем после встречи. Так неудобный вопрос получает рабочую форму."
+        },
+        strength: {
+          withdraw: "Ты чувствуешь хрупкость момента и не хочешь добавлять давления туда, где люди уже на пределе.",
+          defend: "Ты защищаешь профессиональную границу подхода к своей работе, которую не готов(а) перешагнуть: не всё, что ускоряет встречу, помогает делу.",
+          explain: "Ты умеешь объяснить риск через последствия, а не через претензию к людям.",
+          negotiate: "Ты превращаешь неудобную тишину в минимальный следующий шаг, который не разрушает разговор."
+        },
+        cost: {
+          withdraw: "проблема может остаться без имени, а значит, вернуться позже уже в более дорогой форме",
+          defend: "сильная защита качества может прозвучать как давление, если не показать заботу о результате",
+          explain: "можно перегрузить встречу аргументами и всё равно не получить решения, если не сформулировать следующий шаг",
+          negotiate: "слишком аккуратная договорённость может смягчить конфликт, но не дать вопросу нужной силы"
+        },
+        branch: "Здесь важна управляемая смелость: заметить эмоцию, понять, что она защищает качество результата, и выбрать форму, которая открывает факты, а не закрывает разговор."
+      },
+      "scene-6": {
+        intro: "На этом уровне напряжение уже личное: обвинение звучит резко, при людях и с большим обобщением. Эмоция может включиться как сигнал угрозы достоинству и справедливости.",
+        byReaction: {
+          withdraw: "Ты скорее замолкаешь, чтобы не сорваться. Это может удержать форму, но внутри остаётся сильное напряжение и невысказанная позиция.",
+          defend: "Ты быстро останавливаешь обвинение и просишь говорить фактами. Это защита границы там, где фраза уже перешла в личную оценку.",
+          explain: "Ты подробно объясняешь, что было не в твоей зоне ответственности. Это попытка вернуть справедливость и не дать обвинению стать итогом встречи.",
+          negotiate: "Ты предлагаешь разложить ситуацию по фактам: что произошло, где был сбой и что делаем дальше. Это перевод обвинения в рабочий разбор."
+        },
+        strength: {
+          withdraw: "Ты можешь удержать себя от резкого ответа, когда эмоция уже очень сильная.",
+          defend: "Ты показываешь, что личные обвинения не являются нормальной формой рабочего разговора.",
+          explain: "Ты возвращаешь разговор к зонам ответственности и не позволяешь одной фразе заменить разбор ситуации.",
+          negotiate: "Ты помогаешь группе выйти из обвинения к фактам, решениям и следующему шагу."
+        },
+        cost: {
+          withdraw: "твоя версия может не прозвучать, а напряжение останется внутри и начнёт работать фоном уже после встречи",
+          defend: "сила защиты может закрыть разговор, если форма прозвучит как встречная атака",
+          explain: "можно попасть в длинное оправдание, где ты всё больше доказываешь право не быть виноватым(ой)",
+          negotiate: "можно слишком быстро рационализировать ситуацию и не дать себе признать, что обвинение было действительно болезненным"
+        },
+        branch: "Здесь включается управление эмоцией: не подавить злость, а дать ей цивилизованный выход. Это четвёртая ветвь ЭИ — регулировать свой способ действовать."
+      }
+    };
+
+    const repeatInsightByReaction = {
+      withdraw: {
+        second: "Похоже, пауза или уход в тишину уже появлялись раньше. Ситуации разные, но организм снова выбирает снизить шум и не выводить напряжение наружу. В ЭИ это важная подсказка: сначала стоит учиться распознавать момент, когда пауза помогает, а когда уже прячет твою позицию.",
+        third: "Эта тактика начинает выглядеть как паттерн: при давлении ты можешь сохранять внешнее спокойствие, но цена часто уходит внутрь. Возможный триггер — риск конфликта, публичности или чужой оценки.",
+        later: "Пауза снова выходит первой. Это уже не случайность, а ведущий маршрут самозащиты. Следующий шаг — тренировать короткое возвращение в контакт: не говорить много, но всё-таки обозначать, что для тебя важно."
+      },
+      defend: {
+        second: "Похоже, быстрая защита границы уже появлялась раньше. Это может означать, что ты хорошо слышишь давление, но дальше важно смотреть на форму: она открывает разговор или сразу ставит баррикаду?",
+        third: "Защита границы становится заметным маршрутом. Возможный триггер — тон, несправедливость или попытка переложить ответственность. В ЭИ здесь начинается тренировка управления эмоциями: оставить силу, но выбрать форму точнее.",
+        later: "Граница снова выходит первой. Значит, система защиты работает быстро и уверенно. Теперь задача развития не в том, чтобы стать мягче любой ценой, а в том, чтобы твёрдость не превращалась в лишнее давление на контакт."
+      },
+      explain: {
+        second: "Похоже, объяснение уже появлялось раньше. Ситуации разные, а маршрут узнаваемый: сначала прояснить, доказать контекст, вернуть разговор в понятную рамку. Это может быть способом защититься от риска быть неправильно понятым(ой).",
+        third: "Объяснение начинает становиться паттерном. Возможный триггер — неопределённость, обесценивание или ощущение, что без подробностей тебя оценят несправедливо. Здесь важно отличать полезное прояснение от оправдания.",
+        later: "Ты снова идёшь через объяснение. Это сильный аналитический ресурс, но ему нужна граница: сколько фактов достаточно, чтобы прояснить ситуацию, и где начинается попытка заслужить право быть понятым(ой)?"
+      },
+      negotiate: {
+        second: "Похоже, договорённость уже появлялась раньше. Ты снова пытаешься превратить напряжение в следующий шаг. Это сильный навык, но стоит проверять: не перепрыгиваешь ли ты через собственную эмоцию слишком быстро?",
+        third: "Договорённость становится устойчивой линией поведения. Возможный триггер — хаос, неопределённость или риск потерять рабочий результат. В ЭИ здесь важно использовать эмоцию как информацию, а не сразу закрывать её планом действий.",
+        later: "Ты снова собираешь договорённость. Это похоже на ведущую стратегию: быстро вернуть управляемость. Следующий уровень развития — перед решением на секунду спрашивать себя, что именно задело и какую потребность важно не потерять."
+      }
+    };
+
+    function previousSameReactionCount(sceneId, reactionCode) {
+      const currentIndex = scenes.findIndex(scene => scene.id === sceneId);
+      return scenes.slice(0, currentIndex).filter(scene => getAnswer(scene.id).reactionCode === reactionCode).length;
+    }
+
+    function repeatInsight(sceneId, reactionCode) {
+      const count = previousSameReactionCount(sceneId, reactionCode);
+      const variants = repeatInsightByReaction[reactionCode] || repeatInsightByReaction.explain;
+      if (count === 0) return "";
+      if (count === 1) return variants.second;
+      if (count === 2) return variants.third;
+      return variants.later;
+    }
+
+    function getFeedbackCopy(scene, answer) {
+      const sceneCopy = sceneReflectionCopy[scene.id] || sceneReflectionCopy["scene-1"];
+      const reaction = answer.reactionCode || "explain";
+      return {
+        intro: sceneCopy.intro,
+        reactionText: sceneCopy.byReaction[reaction] || sceneCopy.byReaction.explain,
+        strength: sceneCopy.strength[reaction] || sceneCopy.strength.explain,
+        cost: sceneCopy.cost[reaction] || sceneCopy.cost.explain,
+        branch: sceneCopy.branch
+      };
+    }
+
+    function renderFeedback() {
+      const scene = getCurrentScene();
+      const answer = getAnswer(scene.id);
+      const copy = getFeedbackCopy(scene, answer);
+      const need = needMeta[answer.needCode] || "понять, что здесь оказалось важным";
+      const emotion = emotionMeta[answer.emotionCode] || "напряжение";
+      const repeat = repeatInsight(scene.id, answer.reactionCode);
+      return `
+        <section class="screen">
+          <p class="kicker">Минута самоанализа</p>
+          <h2>На что важно обратить внимание</h2>
+          <p class="lead">${escapeHtml(copy.intro)} ${escapeHtml(copy.reactionText)}</p>
+          ${repeat ? `<p>${escapeHtml(repeat)}</p>` : ""}
+          <div class="feedback-card">
+            <div class="feedback-item"><strong>Что здесь придает тебя силу</strong><p>${escapeHtml(copy.strength)}</p></div>
+            <div class="feedback-item"><strong>Где автопилот может взять на себя лишнее</strong><p>Иногда ты платишь тем, что ${escapeHtml(copy.cost)}.</p></div>
+            <div class="feedback-item"><strong>Что для тебя здесь важно</strong><p>В выбранной причине звучит желание ${escapeHtml(need)}. А по состоянию ближе всего было: «${escapeHtml(emotion)}».</p></div>
+            <div class="feedback-item"><strong>Вопрос на заметку</strong><p>${escapeHtml(scene.reflectionQuestion)}</p></div>
+            <div class="feedback-item wide"><strong>Личная траектория</strong><p>${escapeHtml(copy.branch)}</p><p>${escapeHtml(scene.eiNote)}</p></div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" onclick="nextAfterFeedback()">${[1,3,5].includes(state.sceneIndex) ? "К промежуточному итогу" : "Идем дальше"}</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function nextAfterFeedback() {
+      const justFinished = getCurrentScene();
+      const nextIndex = state.sceneIndex + 1;
+      if (["scene-2", "scene-4", "scene-6"].includes(justFinished.id)) setState({ screen: "level", level: justFinished.level });
+      else setState({ screen: "scene", sceneIndex: nextIndex, questionStep: "action" });
+    }
+
+    function renderLevel() {
+      const level = state.level || getCurrentScene()?.level || 1;
+      const note = levelNotes[level];
+      const isLast = level === 3;
+      return `
+        <section class="screen">
+          <p class="kicker">Промежуточный итог</p>
+          <h2>${escapeHtml(note.title)}</h2>
+          <div class="scene-box">
+            <p class="lead">${escapeHtml(note.text)}</p>
+            <p>${escapeHtml(note.prompt)}</p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" onclick="continueAfterLevel(${level})">${isLast ? "Собрать карту" : "Идем дальше"}</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function continueAfterLevel(level) {
+      if (level === 1) setState({ screen: "scene", sceneIndex: 2, questionStep: "action" });
+      else if (level === 2) setState({ screen: "scene", sceneIndex: 4, questionStep: "action" });
+      else setState({ screen: "final" });
+    }
+
+    function countBy(items, key) {
+      return items.reduce((acc, item) => {
+        const value = item[key];
+        if (value) acc[value] = (acc[value] || 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    function topEntries(counts) {
+      const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      if (!entries.length) return [];
+      const max = entries[0][1];
+      return entries.filter(entry => entry[1] === max);
+    }
+
+    function allCompletedAnswers() {
+      return scenes.map(scene => ({ scene, ...getAnswer(scene.id) })).filter(answer => answer.actionId && answer.reasonId && answer.stateId);
+    }
+
+    function buildResult() {
+      const answers = allCompletedAnswers();
+      const reactionCounts = countBy(answers, "reactionCode");
+      const needCounts = countBy(answers, "needCode");
+      const emotionCounts = countBy(answers, "emotionCode");
+      const topReactions = topEntries(reactionCounts).map(([code, count]) => ({ code, count, ...reactionMeta[code] }));
+      const topNeeds = topEntries(needCounts).map(([code, count]) => ({ code, count, label: needMeta[code] }));
+      const topEmotions = topEntries(emotionCounts).map(([code, count]) => ({ code, count, label: emotionMeta[code] }));
+      const highLoad = answers.filter(item => item.scene.level === 3);
+      const highReaction = topEntries(countBy(highLoad, "reactionCode")).map(([code]) => reactionMeta[code]?.short).filter(Boolean).join(" и ");
+      const topBranch = topReactions[0]?.branch || "управления эмоциями";
+      return { answers, topReactions, topNeeds, topEmotions, highReaction, reactionCounts, topBranch };
+    }
+
+    function renderFinal() {
+      const result = buildResult();
+      const top = result.topReactions[0] || reactionMeta.explain;
+      const topList = result.topReactions.map(item => item.resultPhrase).join("; ") || top.resultPhrase;
+      const needs = result.topNeeds.map(item => item.label).join("; ") || "понять, что в ситуации оказалось важным";
+      const emotions = result.topEmotions.map(item => `«${item.label}»`).join("; ") || "напряжение";
+      const practices = Array.from(new Set(result.topReactions.map(item => item.practice).concat([
+        "Проверка интерпретации. Раз: отдели факт от догадки. Два: проверь вопросом — «Я правильно понимаю, что главный вопрос сейчас в следующем шаге, а не в оценке меня целиком?» Три: только потом отвечай.",
+        "Называние состояния. Скажи себе коротко: «Я сейчас напрягся(лась), поэтому хочу уточнить факты, прежде чем отвечать». Это не слабость, а способ вернуть себе выбор."
+      ]))).slice(0, 4);
+
+      return `
+        <section class="screen" id="printableReport">
+          <p class="kicker">Карта самонаблюдения</p>
+          <h1>Твой результат</h1>
+          <p class="lead">Это не оценка личности, а черновик твоих реакций в шести ситуациях, в котором зафиксировано: где эмоция подала сигнал, какая траектория поведения включилась автоматически и с какой ветви эмоционального интеллекта лучше начать развитие.</p>
+
+          <div class="result-layout">
+            <div class="result-block wide">
+              <h3>Самые частые реакции</h3>
+              <p>В этот раз ты чаще пробовал(а) ${escapeHtml(topList)}.</p>
+            </div>
+            <div class="result-block">
+              <h3>Что здесь придает тебя силу</h3>
+              <p>Такая реакция поможет ${escapeHtml(top.value)}.</p>
+            </div>
+            <div class="result-block">
+              <h3>Где автопилот может взять на себя лишнее</h3>
+              <p>Иногда ты платишь тем, что ${escapeHtml(top.cost)}.</p>
+            </div>
+            <div class="result-block">
+              <h3>Что для тебя здесь важно</h3>
+              <p>В причинах чаще звучало желание ${escapeHtml(needs)}.</p>
+            </div>
+            <div class="result-block">
+              <h3>Какие состояния повторялись</h3>
+              <p>Чаще всего были ближе состояния: ${escapeHtml(emotions)}.</p>
+            </div>
+            <div class="result-block wide">
+              <h3>Что происходило под нагрузкой</h3>
+              <p>${result.highReaction ? `На третьем уровне чаще проявлялась реакция: <strong>${escapeHtml(result.highReaction)}</strong>. Под давлением выбор иногда сужается до самого привычного способа защиты. И это не ошибка, а точка входа в тренировку.` : "На третьем уровне данных недостаточно для наблюдения."}</p>
+            </div>
+            <div class="result-block wide">
+              <h3>Личная траектория развития</h3>
+              <p>По результатам прохождения симуляции первым фокусом вашего внимания к способностям эмоционального интеллекта может стать ${escapeHtml(result.topBranch)}. В модели эмоционального интеллекта это не абстрактная теория, а практический уровень: заметить эмоцию на более ресурсную, понять причину её возникновения, использовать сигналы тела и выбрать наиболее подходящее для конкретной ситуации действие.</p>
+            </div>
+            <div class="result-block">
+              <h3>Сильные стороны</h3>
+              <ul>
+                ${result.topReactions.map(item => `<li>${escapeHtml(item.strength)}.</li>`).join("")}
+                <li>Готовность смотреть на свои реакции без превращения этого в экзамен.</li>
+              </ul>
+            </div>
+            <div class="result-block">
+              <h3>Микро-практики</h3>
+              <ul>${practices.map(text => `<li>${escapeHtml(text)}</li>`).join("")}</ul>
+            </div>
+            <div class="result-block wide">
+              <h3>Дисклеймер</h3>
+              <p>Этот отчёт не является диагнозом, психометрической оценкой или определением типа личности. Он отражает выбранные реакции в рамках симуляции и может использоваться как материал для самонаблюдения и развития эмоционального интеллекта.</p>
+            </div>
+          </div>
+          <div class="actions no-print">
+            <button class="btn btn-primary" onclick="savePdf()">Сохранить карту в PDF</button>
+            <button class="btn btn-secondary" onclick="clearProgress()">Пройти ещё раз</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function savePdf() {
+      const oldTitle = document.title;
+      document.title = "Карта самонаблюдения — симуляция ЭИ";
+      window.print();
+      setTimeout(() => { document.title = oldTitle; }, 500);
+    }
+
+    function render() {
+      const top = document.getElementById("topProgress");
+      const progress = topProgressHtml();
+      top.innerHTML = progress;
+      top.classList.toggle("hidden", !progress);
+
+      const app = document.getElementById("app");
+      if (state.screen === "start") app.innerHTML = renderStart();
+      if (state.screen === "consent") app.innerHTML = renderConsent();
+      if (state.screen === "theory") app.innerHTML = renderTheory();
+      if (state.screen === "instruction") app.innerHTML = renderInstruction();
+      if (state.screen === "scene") app.innerHTML = renderSceneIntro();
+      if (state.screen === "question") app.innerHTML = renderQuestion();
+      if (state.screen === "feedback") app.innerHTML = renderFeedback();
+      if (state.screen === "level") app.innerHTML = renderLevel();
+      if (state.screen === "final") app.innerHTML = renderFinal();
+    }
+
+    window.setState = setState;
+    window.startSimulation = startSimulation;
+    window.continueProgress = continueProgress;
+    window.clearProgress = clearProgress;
+    window.selectAction = selectAction;
+    window.selectReason = selectReason;
+    window.selectFeeling = selectFeeling;
+    window.completeScene = completeScene;
+    window.nextAfterFeedback = nextAfterFeedback;
+    window.continueAfterLevel = continueAfterLevel;
+    window.goBackFromSceneIntro = goBackFromSceneIntro;
+    window.savePdf = savePdf;
+
+    render();
+  </script>
+</body>
+</html>
